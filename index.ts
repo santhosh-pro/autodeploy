@@ -4,6 +4,9 @@ import * as kubernetes from "@pulumi/kubernetes";
 import { deployMongoDBCluster } from "./mongo";
 import { deployMySqlDBCluster } from "./mysql";
 import { keycloakModule } from "./keycloack";
+import { deploRabbitMQ } from "./rabbit-mq";
+import { deploDapr } from "./dapr";
+
 
 
 
@@ -42,75 +45,76 @@ const ingress = new kubernetes.helm.v3.Release("nginx", {
     skipAwait: false
 },{provider});
 
+deploRabbitMQ("rmq",provider);
+deploDapr("dapr",provider)
 
 
-
-keycloakModule(provider);
-new kubernetes.yaml.ConfigFile("deploy", {
-    file: "k-ingress.yaml",
-  },{provider});
-
-
-  var certManagerNamespace = new kubernetes.core.v1.Namespace("cert-manager", {
-    kind: "Namespace",
-    metadata: {
-        name: "cert-manager",
-        labels: {
-            app: "cert-manager",
-            kind: "namespace"
-        }
-    },
-    apiVersion: "v1"
-},
-{provider});
+// keycloakModule(provider);
+// new kubernetes.yaml.ConfigFile("deploy", {
+//     file: "k-ingress.yaml",
+//   },{provider});
 
 
-var certManager = new kubernetes.helm.v3.Release("cert-manager", {
-    chart: "cert-manager",
-    repositoryOpts: {
-        repo: "https://charts.jetstack.io"
-    },
-    values: {
-        installCRDs: true
-    },
-    namespace: certManagerNamespace.metadata.name
-}, {
-    dependsOn: [certManagerNamespace],
-    provider:provider
-},
-)
+//   var certManagerNamespace = new kubernetes.core.v1.Namespace("cert-manager", {
+//     kind: "Namespace",
+//     metadata: {
+//         name: "cert-manager",
+//         labels: {
+//             app: "cert-manager",
+//             kind: "namespace"
+//         }
+//     },
+//     apiVersion: "v1"
+// },
+// {provider});
 
-var clusterIssuer = new kubernetes.apiextensions.CustomResource("letsencrypt", {
-    apiVersion: "cert-manager.io/v1",
-    kind: "ClusterIssuer",
-    metadata: {
-        name: "letsencrypt",
-    },
-    spec: {
-        acme: {
 
-            server: "https://acme-v02.api.letsencrypt.org/directory",
-            // skipTLSVerify: true,
-            // server: "https://pebble:14000/dir",
-            email: "santhoshprogrammer94@gmail.com",
-            privateKeySecretRef: {
-                name: "issuer-account-key",
-            },
-            solvers: [
-                {
-                    http01: {
-                        ingress: {
-                            class: "nginx",
-                        }
-                    }
-                }
-            ]
-        }
-    }
-}, {
-    dependsOn: [certManager, ingress],
-    provider
-});
+// var certManager = new kubernetes.helm.v3.Release("cert-manager", {
+//     chart: "cert-manager",
+//     repositoryOpts: {
+//         repo: "https://charts.jetstack.io"
+//     },
+//     values: {
+//         installCRDs: true
+//     },
+//     namespace: certManagerNamespace.metadata.name
+// }, {
+//     dependsOn: [certManagerNamespace],
+//     provider:provider
+// },
+// )
+
+// var clusterIssuer = new kubernetes.apiextensions.CustomResource("letsencrypt", {
+//     apiVersion: "cert-manager.io/v1",
+//     kind: "ClusterIssuer",
+//     metadata: {
+//         name: "letsencrypt",
+//     },
+//     spec: {
+//         acme: {
+
+//             server: "https://acme-v02.api.letsencrypt.org/directory",
+//             // skipTLSVerify: true,
+//             // server: "https://pebble:14000/dir",
+//             email: "santhoshprogrammer94@gmail.com",
+//             privateKeySecretRef: {
+//                 name: "issuer-account-key",
+//             },
+//             solvers: [
+//                 {
+//                     http01: {
+//                         ingress: {
+//                             class: "nginx",
+//                         }
+//                     }
+//                 }
+//             ]
+//         }
+//     }
+// }, {
+//     dependsOn: [certManager, ingress],
+//     provider
+// });
 
 
 
