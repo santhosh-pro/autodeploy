@@ -1,10 +1,9 @@
 import * as k8s from '@pulumi/kubernetes';
 import * as postgresql from '@pulumi/postgresql';
 import { keycloakValues } from './values';
-import { keycloakDatabase } from './database';
 
 
-export const keycloakModule = (provider:any) => {
+export const deployKeycloak = (provider:any) => {
 
   const namespace = new k8s.core.v1.Namespace(`keycloak-namespace`, {
     metadata: {

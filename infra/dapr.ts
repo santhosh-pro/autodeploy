@@ -1,4 +1,5 @@
 import * as kubernetes from "@pulumi/kubernetes";
+import { deploRabbitMQ } from "./rabbit-mq";
 
 export const deploDapr = (name: string,
     provider: kubernetes.Provider) => {
@@ -8,7 +9,7 @@ export const deploDapr = (name: string,
     }, {  provider })
 
     // Install Dapr via Helm
-    new kubernetes.helm.v3.Release(name, {
+    const dapr= new kubernetes.helm.v3.Release(name, {
         name: name,
         namespace: daprSystemNamespace.metadata.name,
         chart: 'dapr',
@@ -47,11 +48,16 @@ export const deploDapr = (name: string,
     }, { provider });
 
     new kubernetes.yaml.ConfigFile("tracing", {
-    file: "tracing.yaml",
+    file: "infra/tracing.yaml",
   },{provider});
 
+
+
+  deploRabbitMQ("rmq",provider);
+
+
 new kubernetes.yaml.ConfigFile("pubsub", {
-    file: "pubsub.yaml",
-  },{provider});
+    file: "infra/pubsub.yaml",
+  },{provider,dependsOn:[dapr]});
 
 }
